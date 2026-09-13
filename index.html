@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;500;600&family=Archivo+Black&family=Space+Grotesk:wght@400;500;700&family=Cormorant:ital,wght@0,400;0,600;1,500&display=swap">
+<title>Speclint</title>
+<style>
+  :root{
+    --ink:#14181a; --ink-soft:#4c5457; --paper:#f7f7f5; --paper-raised:#ffffff;
+    --line:#dcdcd8; --line-soft:#e9e9e6;
+    --accent:#0e7a86; --accent-soft:#e3f1f2; --accent-ink:#053239;
+    --pass:#1a7f45; --pass-soft:#e6f4ea;
+    --fail:#b6412b; --fail-soft:#fbe9e4;
+    --mono: 'IBM Plex Mono', ui-monospace, monospace;
+    --sans: 'IBM Plex Sans', system-ui, sans-serif;
+    --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:24px; --sp-6:32px; --sp-7:48px; --sp-8:64px;
+    --radius:3px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --ink:#eef0ef; --ink-soft:#a7aeae; --paper:#111414; --paper-raised:#171b1b;
+      --line:#2a2f2f; --line-soft:#202424;
+      --accent:#3fc2cf; --accent-soft:#123033; --accent-ink:#c7f0f4;
+      --pass:#4ade80; --pass-soft:#13291c;
+      --fail:#f0765f; --fail-soft:#331a15;
+    }
+  }
+  :root[data-theme="dark"]{
+    --ink:#eef0ef; --ink-soft:#a7aeae; --paper:#111414; --paper-raised:#171b1b;
+    --line:#2a2f2f; --line-soft:#202424;
+    --accent:#3fc2cf; --accent-soft:#123033; --accent-ink:#c7f0f4;
+    --pass:#4ade80; --pass-soft:#13291c;
+    --fail:#f0765f; --fail-soft:#331a15;
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    margin:0; background:var(--paper); color:var(--ink);
+    font-family:var(--sans); font-size:14px; line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:var(--accent);}
+  button{font-family:inherit; cursor:pointer;}
+
+  .shell{max-width:1180px; margin:0 auto; padding:var(--sp-6) var(--sp-5) var(--sp-8);}
+
+  /* ===== Masthead ===== */
+  .masthead{display:flex; align-items:flex-start; justify-content:space-between; gap:var(--sp-5); flex-wrap:wrap; padding-bottom:var(--sp-6); border-bottom:1px solid var(--line);}
+  .wordmark{display:flex; align-items:center; gap:var(--sp-3);}
+  .mark{width:30px; height:30px; border-radius:var(--radius); background:var(--ink); color:var(--paper); display:flex; align-items:center; justify-content:center; font-family:var(--mono); font-weight:600; font-size:15px;}
+  .wordmark h1{font-size:19px; margin:0; letter-spacing:-0.01em;}
+  .wordmark .tag{display:block; font-family:var(--mono); font-size:11px; color:var(--ink-soft); margin-top:2px;}
+  .badge-row{display:flex; gap:var(--sp-2); flex-wrap:wrap; max-width:420px; justify-content:flex-end;}
+  .pill{font-family:var(--mono); font-size:11px; padding:4px 9px; border:1px solid var(--line); border-radius:100px; color:var(--ink-soft); white-space:nowrap;}
+  .pill.link{color:var(--accent); border-color:var(--accent-soft); text-decoration:none;}
+
+  .thesis{max-width:640px; margin-top:var(--sp-5); font-size:15px; color:var(--ink-soft);}
+  .thesis strong{color:var(--ink); font-weight:600;}
+
+  /* ===== Tabs ===== */
+  .tabs{display:flex; gap:2px; margin-top:var(--sp-6); border:1px solid var(--line); border-radius:var(--radius); width:fit-content; overflow:hidden;}
+  .tab{padding:9px 18px; background:var(--paper-raised); border:none; color:var(--ink-soft); font-size:13px; font-weight:500; border-right:1px solid var(--line);}
+  .tab:last-child{border-right:none;}
+  .tab[aria-selected="true"]{background:var(--ink); color:var(--paper);}
+  .step{font-family:var(--mono); font-size:11px; opacity:.6; margin-right:7px;}
+
+  section.panel{margin-top:var(--sp-6); display:none;}
+  section.panel.active{display:block;}
+
+  h2.panel-title{font-size:13px; text-transform:uppercase; letter-spacing:.08em; color:var(--ink-soft); font-weight:600; margin:0 0 var(--sp-2);}
+  p.panel-sub{margin:0 0 var(--sp-6); color:var(--ink-soft); font-size:13.5px; max-width:560px;}
+
+  /* ===== Catalog ===== */
+  .catalog-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:var(--sp-5);}
+  .style-card{border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; background:var(--paper-raised); display:flex; flex-direction:column;}
+  .swatch{height:132px; display:flex; align-items:center; justify-content:center; position:relative;}
+  .swatch .demo-word{font-weight:700;}
+  .style-body{padding:var(--sp-4); display:flex; flex-direction:column; gap:var(--sp-3); flex:1;}
+  .style-name{font-size:15px; font-weight:600; margin:0;}
+  .style-mood{font-size:12.5px; color:var(--ink-soft); margin:0; line-height:1.5;}
+  .token-row{display:flex; gap:6px; align-items:center; font-family:var(--mono); font-size:11px; color:var(--ink-soft);}
+  .dot{width:11px; height:11px; border-radius:50%; border:1px solid var(--line-soft); flex:none;}
+  .style-cta{margin-top:auto; background:none; border:1px solid var(--line); border-radius:var(--radius); padding:8px 10px; font-size:12.5px; font-weight:500; color:var(--ink); text-align:left;}
+  .style-cta:hover{border-color:var(--accent); color:var(--accent);}
+  .source-line{font-family:var(--mono); font-size:10.5px; color:var(--ink-soft); text-decoration:none; border-top:1px dashed var(--line-soft); padding-top:var(--sp-3); display:block;}
+  a.source-line{color:var(--accent);}
+  a.source-line:hover{text-decoration:underline;}
+
+  /* ===== Compile ===== */
+  .compile-layout{display:grid; grid-template-columns:300px 1fr; gap:var(--sp-6); align-items:start;}
+  .style-switch{display:flex; gap:6px; margin-bottom:var(--sp-5);}
+  .switch-btn{flex:1; padding:7px 4px; font-size:11.5px; border:1px solid var(--line); background:var(--paper-raised); color:var(--ink-soft); border-radius:var(--radius); font-weight:500;}
+  .switch-btn[aria-pressed="true"]{border-color:var(--ink); color:var(--ink); background:var(--paper);}
+
+  .spec-sheet{border:1px solid var(--line); border-radius:var(--radius); background:var(--paper-raised); padding:var(--sp-4); font-family:var(--mono);}
+  .spec-sheet h3{font-size:10.5px; text-transform:uppercase; letter-spacing:.08em; color:var(--ink-soft); margin:0 0 var(--sp-3); font-family:var(--sans); font-weight:600;}
+  .spec-block{margin-bottom:var(--sp-4);}
+  .spec-block:last-child{margin-bottom:0;}
+  .spec-swatch-row{display:flex; align-items:center; gap:8px; font-size:11.5px; padding:3px 0;}
+  .spec-swatch{width:14px; height:14px; border-radius:3px; border:1px solid var(--line-soft); flex:none;}
+  .spec-type-row{display:flex; justify-content:space-between; font-size:11.5px; padding:3px 0; border-top:1px dashed var(--line-soft);}
+  .spec-type-row:first-of-type{border-top:none;}
+
+  .render-stage{border:1px solid var(--line); border-radius:var(--radius); background:var(--paper-raised); padding:var(--sp-6); display:flex; justify-content:center;}
+
+  /* the ad card itself: purely token-driven */
+  .ad-card{
+    width:300px; aspect-ratio:4/5; position:relative; overflow:hidden;
+    background:var(--c-bg); color:var(--c-text); font-family:var(--f-body);
+    display:flex; flex-direction:column; padding:var(--pad,22px);
+    border-radius:4px;
+  }
+  .ad-bignum{position:absolute; top:-14px; left:-6px; font-size:96px; font-weight:900; opacity:.1; font-family:var(--f-display); color:var(--c-cardbg,var(--c-accent));}
+  .ad-headline{font-family:var(--f-display); font-weight:var(--hw,700); font-size:var(--hs,27px); line-height:1.06; letter-spacing:var(--ht,-0.01em); margin:0 0 10px; position:relative; z-index:1; max-width:92%;}
+  .ad-sub{font-size:12px; color:var(--c-textsoft,var(--c-text)); opacity:.85; margin:0 0 14px; position:relative; z-index:1; max-width:88%;}
+  .ad-benefits{display:flex; flex-direction:column; gap:6px; margin-bottom:14px; position:relative; z-index:1;}
+  .ad-benefit{display:flex; align-items:center; gap:6px; font-size:11px; font-weight:500;}
+  .ad-benefit .arrow{color:var(--c-accent); font-weight:700;}
+  .ad-proof{display:flex; align-items:center; gap:6px; font-size:10.5px; margin-bottom:auto; position:relative; z-index:1;}
+  .ad-stars{color:var(--c-accent); letter-spacing:1px;}
+  .ad-fineprint{font-family:var(--mono); font-size:9.5px; opacity:.55; margin-top:8px; position:relative; z-index:1;}
+  .ad-bottom{display:flex; align-items:center; justify-content:space-between; gap:8px; position:relative; z-index:1; margin-top:14px;}
+  .ad-brand{font-family:var(--mono); font-size:10px; letter-spacing:.04em;}
+  .ad-cta{background:var(--c-cta-bg,var(--c-accent)); color:var(--c-cta-text,#fff); font-weight:600; font-size:11px; padding:9px 14px; border-radius:100px; white-space:nowrap;}
+  .ad-badge{position:absolute; top:14px; right:14px; width:56px; height:56px; border-radius:50%; background:var(--c-accent); color:var(--c-cta-text,#fff); font-family:var(--f-display); font-weight:700; font-size:9.5px; display:flex; align-items:center; justify-content:center; text-align:center; line-height:1.15; z-index:2; padding:4px;}
+
+  .flag-box{position:absolute; border:2px solid var(--fail); border-radius:3px; pointer-events:none; z-index:5;}
+  .flag-box::after{content:attr(data-flag); position:absolute; top:100%; left:0; margin-top:3px; background:var(--fail); color:#fff; font-family:var(--mono); font-size:9px; padding:2px 5px; border-radius:2px; white-space:nowrap;}
+
+  /* ===== Lint ===== */
+  .lint-layout{display:grid; grid-template-columns:1fr 300px; gap:var(--sp-6); align-items:start;}
+  .lint-controls{display:flex; flex-direction:column; gap:var(--sp-2); margin-bottom:var(--sp-5);}
+  .lint-controls label{font-size:11.5px; font-weight:600; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.06em;}
+  select{font-family:var(--sans); font-size:13px; padding:8px 10px; border:1px solid var(--line); border-radius:var(--radius); background:var(--paper-raised); color:var(--ink); width:100%;}
+
+  .lint-citation{display:flex; align-items:center; gap:7px; font-family:var(--mono); font-size:11px; color:var(--accent-ink); background:var(--accent-soft); border:1px solid var(--accent-soft); border-radius:var(--radius); padding:8px 10px; margin-bottom:var(--sp-4);}
+  .lint-citation a{color:inherit; text-decoration:underline;}
+
+  .check-group-label{font-size:10.5px; text-transform:uppercase; letter-spacing:.07em; color:var(--ink-soft); font-weight:600; margin:var(--sp-4) 0 var(--sp-2);}
+  .check-group-label:first-child{margin-top:0;}
+  .check-list{display:flex; flex-direction:column; gap:var(--sp-3);}
+  .check{border:1px solid var(--line); border-radius:var(--radius); padding:var(--sp-3) var(--sp-4); background:var(--paper-raised);}
+  .check.primary{border-color:var(--ink); border-left:3px solid var(--ink);}
+  .check-head{display:flex; align-items:center; justify-content:between; gap:8px; margin-bottom:4px;}
+  .check-name{font-size:12.5px; font-weight:600; flex:1;}
+  .chip{font-family:var(--mono); font-size:10px; font-weight:600; padding:2px 8px; border-radius:100px; text-transform:uppercase; letter-spacing:.04em; flex:none;}
+  .chip.pass{background:var(--pass-soft); color:var(--pass);}
+  .chip.fail{background:var(--fail-soft); color:var(--fail);}
+  .check-detail{font-family:var(--mono); font-size:11px; color:var(--ink-soft); margin:0;}
+
+  .check-list-secondary{display:flex; flex-direction:column; gap:6px;}
+  .check-compact{display:flex; align-items:center; gap:8px; font-size:11.5px; padding:6px 2px; border-bottom:1px solid var(--line-soft);}
+  .check-compact:last-child{border-bottom:none;}
+  .check-compact .check-name{font-size:11.5px; font-weight:500; color:var(--ink-soft); flex:1;}
+  .check-compact .check-detail{font-size:10.5px;}
+
+  .about{margin-top:var(--sp-8); padding-top:var(--sp-6); border-top:1px solid var(--line); display:grid; grid-template-columns:1fr auto; gap:var(--sp-6); align-items:start;}
+  .about p{max-width:640px; font-size:13px; color:var(--ink-soft); margin:0 0 8px;}
+  .about a{font-size:12.5px;}
+
+  @media (max-width:860px){
+    .compile-layout, .lint-layout{grid-template-columns:1fr;}
+    .catalog-grid{grid-template-columns:1fr;}
+    .about{grid-template-columns:1fr;}
+  }
+</style>
+
+</head>
+<body>
+<div class="shell">
+
+  <header class="masthead">
+    <div class="wordmark">
+      <div class="mark">/L</div>
+      <div>
+        <h1>Speclint</h1>
+        <span class="tag">a linter for AI-generated brand creative</span>
+      </div>
+    </div>
+    <div class="badge-row">
+      <span class="pill">independent concept &middot; not a Gooseworks product</span>
+      <a class="pill link" href="https://github.com/gooseworks-ai/goose-skills" target="_blank" rel="noopener">modeled on goose-skills (public repo)</a>
+    </div>
+  </header>
+
+  <p class="thesis">Gooseworks writes its design rules so agents can render on-brand creative without a person reviewing every result. <strong>Speclint takes the same rules and gives them a visual, testable form</strong>, so a person can see what an agent already reads perfectly and catch drift before an ad spends a dollar.</p>
+
+  <nav class="tabs" role="tablist">
+    <button class="tab" role="tab" aria-selected="true" data-panel="catalog"><span class="step">01</span>Catalog</button>
+    <button class="tab" role="tab" aria-selected="false" data-panel="compile"><span class="step">02</span>Compile</button>
+    <button class="tab" role="tab" aria-selected="false" data-panel="lint"><span class="step">03</span>Lint</button>
+  </nav>
+
+  <!-- ===================== CATALOG ===================== -->
+  <section class="panel active" id="panel-catalog">
+    <h2 class="panel-title">Style catalog</h2>
+    <p class="panel-sub">Today, browsing what's in the design library means <code>npx gooseworks styles list</code> and reading text. Here's what three of those specs actually look like rendered.</p>
+    <div class="catalog-grid" id="catalog-grid"></div>
+  </section>
+
+  <!-- ===================== COMPILE ===================== -->
+  <section class="panel" id="panel-compile">
+    <h2 class="panel-title">Spec &rarr; render</h2>
+    <p class="panel-sub">The card on the right is one component. Every pixel comes from the token sheet on the left. Swap the style, nothing else changes.</p>
+    <div class="compile-layout">
+      <div>
+        <div class="style-switch" id="compile-switch"></div>
+        <div class="spec-sheet" id="spec-sheet"></div>
+      </div>
+      <div class="render-stage">
+        <div class="ad-card" id="compile-card"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== LINT ===================== -->
+  <section class="panel" id="panel-lint">
+    <h2 class="panel-title">Lint a render</h2>
+    <p class="panel-sub">Pick a style spec and a rendered variant. Four checks run against the live DOM: real contrast math and real pixel measurements, not a canned pass/fail.</p>
+    <div class="lint-layout">
+      <div class="render-stage" style="position:relative;">
+        <div class="ad-card" id="lint-card"></div>
+      </div>
+      <div>
+        <div class="lint-controls">
+          <label for="lint-style-select">Style spec</label>
+          <select id="lint-style-select"></select>
+          <label for="lint-variant-select" style="margin-top:8px;">Rendered variant</label>
+          <select id="lint-variant-select"></select>
+        </div>
+        <div class="lint-citation">256px thumbnail threshold &middot; <a href="https://github.com/gooseworks-ai/goose-skills/blob/main/skills/ads/composites/remix-graphic-ad-from-reference/tests/verifier.md" target="_blank" rel="noopener">goose-skills / verifier.md</a></div>
+        <div id="check-list"></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="about">
+    <div>
+      <p>I'm a Design Engineer candidate applying to Gooseworks. You've already solved the hard half of this: teaching agents to follow design rules exactly, expressed as real markdown in goose-skills. I got curious what the other half looks like: a person actually seeing and checking those same rules. So I built it. Not a pitch to replace anything you've shipped.</p>
+    </div>
+    <a class="pill link" href="https://www.workatastartup.com/jobs/109409" target="_blank" rel="noopener">Design Engineer @ Gooseworks &rarr;</a>
+  </div>
+
+</div>
+
+<script>
+(function(){
+
+  var STYLES = {
+    "bold-signal": {
+      name: "Bold Signal",
+      mood: "Confident, high-contrast, built for direct response.",
+      bg: "#1a1a1a", text: "#ffffff", textsoft: "#ffffff",
+      accent: "#FF5722", ctaText: "#1a1a1a",
+      display: "'Archivo Black', sans-serif", body: "'Space Grotesk', sans-serif",
+      headlineSize: 27, headlineWeight: 900, tracking: "-0.01em",
+      swatches: [["Background","#1a1a1a"],["Card / accent","#FF5722"],["Text","#ffffff"]],
+      type: [["Display","Archivo Black / 900"],["Body","Space Grotesk / 400-500"],["Headline scale","80px @ 1080px canvas"]],
+      source: { text: "Source: goose-skills / STYLE_PRESETS.md", href: "https://github.com/gooseworks-ai/goose-skills/blob/main/skills/design/capabilities/create-html-carousel/STYLE_PRESETS.md" }
+    },
+    "dark-botanical": {
+      name: "Dark Botanical",
+      mood: "Elegant, premium, editorial restraint.",
+      bg: "#0f0f0f", text: "#e8e4df", textsoft: "#9a9590",
+      accent: "#d4a574", ctaText: "#0f0f0f",
+      display: "'Cormorant', serif", body: "'IBM Plex Sans', sans-serif",
+      headlineSize: 26, headlineWeight: 600, tracking: "0em",
+      swatches: [["Background","#0f0f0f"],["Accent (warm)","#d4a574"],["Text","#e8e4df"]],
+      type: [["Display","Cormorant / 400-600 italic"],["Body","IBM Plex Sans / 300-400"],["Headline scale","72px @ 1080px canvas"]],
+      source: { text: "Source: goose-skills / STYLE_PRESETS.md", href: "https://github.com/gooseworks-ai/goose-skills/blob/main/skills/design/capabilities/create-html-carousel/STYLE_PRESETS.md" }
+    },
+    "paper-proof": {
+      name: "Paper Proof",
+      mood: "Calm and credible. The numbers carry the pitch.",
+      bg: "#f2f4f2", text: "#14181a", textsoft: "#4c5457",
+      accent: "#c8362a", ctaText: "#ffffff",
+      display: "'IBM Plex Sans', sans-serif", body: "'IBM Plex Sans', sans-serif",
+      headlineSize: 25, headlineWeight: 700, tracking: "-0.01em",
+      swatches: [["Background","#f2f4f2"],["Accent (signal red)","#c8362a"],["Text","#14181a"]],
+      type: [["Display","IBM Plex Sans / 700"],["Body","IBM Plex Sans / 400"],["Headline scale","68px @ 1080px canvas"]],
+      source: { text: "Independent spec &middot; same format, written by me", href: null }
+    }
+  };
+
+  var AD_CONTENT = {
+    headline: "Better mornings start in your gut.",
+    sub: "A daily probiotic built with your GI doctor, not your feed.",
+    benefits: ["No bloating by day 5","Third-party tested","Ships same day"],
+    rating: "4.8 &middot; 12,400 reviews",
+    brand: "ELM & CO",
+    cta: "Shop the starter kit",
+    badge: "20% off first order",
+    fineprint: "Subscription cancels anytime. See elmandco.com/terms."
+  };
+
+  var VARIANTS = {
+    "clean": { label: "Clean render", overrides: {} },
+    "low-contrast": {
+      label: "Low-contrast CTA",
+      overrides: { ctaTextOverride: true }
+    },
+    "off-brand": {
+      label: "Off-brand accent",
+      overrides: { accentOverride: "#3a6ff0" }
+    },
+    "cramped": {
+      label: "Cramped layout",
+      overrides: {
+        fineprintSizeOverride: 6,
+        headlineOverride: "Better mornings start in your gut, guaranteed by day five or your money back.",
+        headlineNowrap: true
+      }
+    }
+  };
+
+  function buildCardDOM(styleKey, variantKey){
+    var s = STYLES[styleKey];
+    var v = VARIANTS[variantKey] ? VARIANTS[variantKey].overrides : {};
+
+    var ctaBg = s.accent;
+    var ctaText = s.ctaText;
+    if (v.accentOverride) ctaBg = v.accentOverride;
+    if (v.ctaTextOverride) ctaText = shadeTowards(s.bg, s.text, 0.28);
+
+    var fineSize = v.fineprintSizeOverride || 9.5;
+    var headlineText = v.headlineOverride || AD_CONTENT.headline;
+    var headlineStyle = v.headlineNowrap ? ' style="white-space:nowrap; max-width:none;"' : '';
+
+    return {
+      style: s,
+      html:
+        '<div class="ad-bignum" style="color:'+ (v.accentOverride||s.accent) +'">01</div>'+
+        '<div class="ad-badge" data-el="badge" style="background:'+ (v.accentOverride||s.accent) +'; color:'+ s.ctaText +'">'+ AD_CONTENT.badge +'</div>'+
+        '<h3 class="ad-headline" data-el="headline"'+headlineStyle+'>'+ headlineText +'</h3>'+
+        '<p class="ad-sub" data-el="sub" style="color:'+ s.textsoft +'">'+ AD_CONTENT.sub +'</p>'+
+        '<div class="ad-benefits">'+
+          AD_CONTENT.benefits.map(function(b){ return '<div class="ad-benefit"><span class="arrow" style="color:'+ (v.accentOverride||s.accent) +'">&rarr;</span>'+ b +'</div>'; }).join('')+
+        '</div>'+
+        '<div class="ad-proof"><span class="ad-stars" style="color:'+ (v.accentOverride||s.accent) +'">&#9733;&#9733;&#9733;&#9733;&#9733;</span><span>'+ AD_CONTENT.rating +'</span></div>'+
+        '<div class="ad-fineprint" data-el="fineprint" style="font-size:'+fineSize+'px;">'+ AD_CONTENT.fineprint +'</div>'+
+        '<div class="ad-bottom">'+
+          '<span class="ad-brand">'+ AD_CONTENT.brand +'</span>'+
+          '<span class="ad-cta" data-el="cta" style="background:'+ ctaBg +'; color:'+ ctaText +'">'+ AD_CONTENT.cta +'</span>'+
+        '</div>',
+      vars: {
+        '--c-bg': s.bg, '--c-text': s.text, '--c-textsoft': s.textsoft,
+        '--c-accent': v.accentOverride || s.accent, '--c-cta-text': s.ctaText,
+        '--f-display': s.display, '--f-body': s.body,
+        '--hs': s.headlineSize+'px', '--hw': s.headlineWeight, '--ht': s.tracking
+      }
+    };
+  }
+
+  function applyCard(el, styleKey, variantKey){
+    var built = buildCardDOM(styleKey, variantKey);
+    el.innerHTML = built.html;
+    Object.keys(built.vars).forEach(function(k){ el.style.setProperty(k, built.vars[k]); });
+    return built.style;
+  }
+
+  function shadeTowards(bgHex, fgHex, amount){
+    var bg = hexToRgb(bgHex), fg = hexToRgb(fgHex);
+    var mixed = {
+      r: Math.round(bg.r + (fg.r-bg.r)*amount),
+      g: Math.round(bg.g + (fg.g-bg.g)*amount),
+      b: Math.round(bg.b + (fg.b-bg.b)*amount)
+    };
+    return rgbToHex(mixed);
+  }
+
+  function hexToRgb(hex){
+    hex = hex.replace('#','');
+    if(hex.length===3) hex = hex.split('').map(function(c){return c+c;}).join('');
+    var num = parseInt(hex,16);
+    return { r:(num>>16)&255, g:(num>>8)&255, b:num&255 };
+  }
+  function rgbToHex(c){
+    function h(n){ var s = n.toString(16); return s.length===1 ? '0'+s : s; }
+    return '#'+h(c.r)+h(c.g)+h(c.b);
+  }
+  function relLuminance(hex){
+    var c = hexToRgb(hex);
+    var chans = [c.r,c.g,c.b].map(function(v){
+      v = v/255;
+      return v <= 0.03928 ? v/12.92 : Math.pow((v+0.055)/1.055, 2.4);
+    });
+    return 0.2126*chans[0] + 0.7152*chans[1] + 0.0722*chans[2];
+  }
+  function contrastRatio(hexA, hexB){
+    var L1 = relLuminance(hexA), L2 = relLuminance(hexB);
+    var lighter = Math.max(L1,L2), darker = Math.min(L1,L2);
+    return (lighter+0.05)/(darker+0.05);
+  }
+  function colorDistance(hexA, hexB){
+    var a = hexToRgb(hexA), b = hexToRgb(hexB);
+    return Math.sqrt(Math.pow(a.r-b.r,2)+Math.pow(a.g-b.g,2)+Math.pow(a.b-b.b,2));
+  }
+
+  // ---------- CATALOG ----------
+  var catalogGrid = document.getElementById('catalog-grid');
+  Object.keys(STYLES).forEach(function(key){
+    var s = STYLES[key];
+    var card = document.createElement('div');
+    card.className = 'style-card';
+    card.innerHTML =
+      '<div class="swatch" style="background:'+s.bg+'; color:'+s.text+';">'+
+        '<span class="demo-word" style="font-family:'+s.display+'; font-size:30px; color:'+s.accent+';">Aa</span>'+
+      '</div>'+
+      '<div class="style-body">'+
+        '<h3 class="style-name">'+s.name+'</h3>'+
+        '<p class="style-mood">'+s.mood+'</p>'+
+        '<div class="token-row"><span class="dot" style="background:'+s.bg+'"></span>'+s.bg+'<span class="dot" style="background:'+s.accent+'"></span>'+s.accent+'</div>'+
+        '<button class="style-cta" data-goto="'+key+'">View spec &amp; render &rarr;</button>'+
+        (s.source.href
+          ? '<a class="source-line" href="'+s.source.href+'" target="_blank" rel="noopener">'+s.source.text+' &rarr;</a>'
+          : '<span class="source-line">'+s.source.text+'</span>')+
+      '</div>';
+    catalogGrid.appendChild(card);
+  });
+  catalogGrid.addEventListener('click', function(e){
+    var btn = e.target.closest('[data-goto]');
+    if(!btn) return;
+    activateTab('compile');
+    setCompileStyle(btn.getAttribute('data-goto'));
+  });
+
+  // ---------- COMPILE ----------
+  var compileSwitch = document.getElementById('compile-switch');
+  var specSheet = document.getElementById('spec-sheet');
+  var compileCard = document.getElementById('compile-card');
+  var currentCompileStyle = 'bold-signal';
+
+  Object.keys(STYLES).forEach(function(key){
+    var b = document.createElement('button');
+    b.className = 'switch-btn';
+    b.textContent = STYLES[key].name;
+    b.setAttribute('aria-pressed', key===currentCompileStyle ? 'true':'false');
+    b.addEventListener('click', function(){ setCompileStyle(key); });
+    compileSwitch.appendChild(b);
+  });
+
+  function setCompileStyle(key){
+    currentCompileStyle = key;
+    Array.from(compileSwitch.children).forEach(function(b,i){
+      b.setAttribute('aria-pressed', Object.keys(STYLES)[i]===key ? 'true':'false');
+    });
+    var s = applyCard(compileCard, key, 'clean');
+    renderSpecSheet(s);
+  }
+
+  function renderSpecSheet(s){
+    specSheet.innerHTML =
+      '<div class="spec-block"><h3>Palette</h3>'+
+        s.swatches.map(function(row){
+          return '<div class="spec-swatch-row"><span class="spec-swatch" style="background:'+row[1]+'"></span>'+row[0]+' &middot; '+row[1]+'</div>';
+        }).join('')+
+      '</div>'+
+      '<div class="spec-block"><h3>Type</h3>'+
+        s.type.map(function(row){
+          return '<div class="spec-type-row"><span>'+row[0]+'</span><span>'+row[1]+'</span></div>';
+        }).join('')+
+      '</div>'+
+      '<div class="spec-block"><h3>Mood</h3><div class="spec-type-row" style="border-top:none;"><span>'+s.mood+'</span></div></div>'+
+      (s.source.href
+        ? '<a class="source-line" href="'+s.source.href+'" target="_blank" rel="noopener">'+s.source.text+' &rarr;</a>'
+        : '<span class="source-line">'+s.source.text+'</span>');
+  }
+
+  // ---------- LINT ----------
+  var lintStyleSelect = document.getElementById('lint-style-select');
+  var lintVariantSelect = document.getElementById('lint-variant-select');
+  var lintCard = document.getElementById('lint-card');
+  var lintStage = lintCard.parentElement;
+  var checkList = document.getElementById('check-list');
+
+  Object.keys(STYLES).forEach(function(key){
+    var o = document.createElement('option'); o.value = key; o.textContent = STYLES[key].name;
+    lintStyleSelect.appendChild(o);
+  });
+  Object.keys(VARIANTS).forEach(function(key){
+    var o = document.createElement('option'); o.value = key; o.textContent = VARIANTS[key].label;
+    lintVariantSelect.appendChild(o);
+  });
+  lintVariantSelect.value = 'low-contrast';
+
+  function runLint(){
+    var styleKey = lintStyleSelect.value;
+    var variantKey = lintVariantSelect.value;
+    var s = applyCard(lintCard, styleKey, variantKey);
+
+    Array.from(lintStage.querySelectorAll('.flag-box')).forEach(function(n){ n.remove(); });
+
+    var results = [];
+
+    // Check 1: CTA contrast
+    var ctaEl = lintCard.querySelector('[data-el="cta"]');
+    var ctaBg = rgbToHexFromComputed(getComputedStyle(ctaEl).backgroundColor);
+    var ctaFg = rgbToHexFromComputed(getComputedStyle(ctaEl).color);
+    var ratio = contrastRatio(ctaBg, ctaFg);
+    var ctaPass = ratio >= 4.5;
+    results.push({
+      name: 'CTA text contrast', pass: ctaPass, weight: 'primary',
+      detail: ratio.toFixed(2)+':1 against '+ctaBg+' &middot; needs ≥ 4.5:1'
+    });
+    if(!ctaPass) flagElement(ctaEl, 'contrast '+ratio.toFixed(1)+':1');
+
+    // Check 2: accent palette distance
+    var specAccent = STYLES[styleKey].accent;
+    var usedAccent = rgbToHexFromComputed(getComputedStyle(lintCard).getPropertyValue('--c-accent') || specAccent);
+    var dist = colorDistance(specAccent, usedAccent);
+    var accentPass = dist <= 40;
+    results.push({
+      name: 'Accent matches spec', pass: accentPass, weight: 'secondary',
+      detail: usedAccent+' vs spec '+specAccent+' &middot; Δ'+Math.round(dist)+' (max 40)'
+    });
+    if(!accentPass){
+      var badgeEl = lintCard.querySelector('[data-el="badge"]');
+      flagElement(badgeEl, 'Δ'+Math.round(dist)+' off spec');
+    }
+
+    // Check 3: thumbnail legibility, per goose-graphics' own verifier ("legible at 256px thumbnail").
+    // Card is displayed at 300px representing a 1080px canvas, so realPx = renderedPx * 3.6.
+    var fineEl = lintCard.querySelector('[data-el="fineprint"]');
+    var renderedPx = parseFloat(getComputedStyle(fineEl).fontSize);
+    var realPx = renderedPx * 3.6;
+    var thumbPx = realPx * (256/1080);
+    var legiblePass = thumbPx >= 6;
+    results.push({
+      name: 'Legible at 256px thumbnail', pass: legiblePass, weight: 'primary',
+      detail: thumbPx.toFixed(1)+'px at thumbnail size &middot; needs ≥ 6px'
+    });
+    if(!legiblePass) flagElement(fineEl, thumbPx.toFixed(1)+'px at thumb');
+
+    // Check 4: safe-zone overflow
+    var stageRect = lintCard.getBoundingClientRect();
+    var inset = stageRect.width * 0.05;
+    var safeLeft = stageRect.left + inset, safeRight = stageRect.right - inset;
+    var overflowEl = null;
+    ['headline','sub','fineprint'].forEach(function(role){
+      var el = lintCard.querySelector('[data-el="'+role+'"]');
+      if(!el) return;
+      var r = el.getBoundingClientRect();
+      if(r.left < safeLeft - 1 || r.right > safeRight + 1) overflowEl = el;
+    });
+    var safePass = !overflowEl;
+    results.push({
+      name: 'Inside safe margin', pass: safePass, weight: 'secondary',
+      detail: safePass ? 'all text within 5% safe inset' : 'text crosses the 5% safe inset'
+    });
+    if(overflowEl) flagElement(overflowEl, 'crosses safe margin');
+
+    var primary = results.filter(function(r){ return r.weight === 'primary'; });
+    var secondary = results.filter(function(r){ return r.weight === 'secondary'; });
+
+    checkList.innerHTML =
+      '<div class="check-group-label">Checks from goose-skills&rsquo; own verifier</div>'+
+      '<div class="check-list">'+
+      primary.map(function(r){
+        return '<div class="check primary"><div class="check-head"><span class="check-name">'+r.name+'</span>'+
+          '<span class="chip '+(r.pass?'pass':'fail')+'">'+(r.pass?'Pass':'Fail')+'</span></div>'+
+          '<p class="check-detail">'+r.detail+'</p></div>';
+      }).join('')+
+      '</div>'+
+      '<div class="check-group-label">Also checked</div>'+
+      '<div class="check-list-secondary">'+
+      secondary.map(function(r){
+        return '<div class="check-compact"><span class="check-name">'+r.name+'</span>'+
+          '<span class="chip '+(r.pass?'pass':'fail')+'">'+(r.pass?'Pass':'Fail')+'</span>'+
+          '<span class="check-detail">'+r.detail+'</span></div>';
+      }).join('')+
+      '</div>';
+  }
+
+  function flagElement(el, label){
+    var elRect = el.getBoundingClientRect();
+    var stageRect = lintStage.getBoundingClientRect();
+    var box = document.createElement('div');
+    box.className = 'flag-box';
+    box.setAttribute('data-flag', label);
+    box.style.left = (elRect.left - stageRect.left - 3)+'px';
+    box.style.top = (elRect.top - stageRect.top - 3)+'px';
+    box.style.width = (elRect.width + 6)+'px';
+    box.style.height = (elRect.height + 6)+'px';
+    lintStage.appendChild(box);
+  }
+
+  function rgbToHexFromComputed(str){
+    str = (str || '').trim();
+    if(str.charAt(0)==='#') return str;
+    var m = str.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+    if(!m) return '#000000';
+    return rgbToHex({r:+m[1], g:+m[2], b:+m[3]});
+  }
+
+  lintStyleSelect.addEventListener('change', runLint);
+  lintVariantSelect.addEventListener('change', runLint);
+
+  // ---------- TABS ----------
+  var tabs = document.querySelectorAll('.tab');
+  function activateTab(name){
+    tabs.forEach(function(t){ t.setAttribute('aria-selected', t.getAttribute('data-panel')===name ? 'true':'false'); });
+    document.querySelectorAll('.panel').forEach(function(p){ p.classList.toggle('active', p.id === 'panel-'+name); });
+    if(name === 'lint') requestAnimationFrame(runLint);
+  }
+  tabs.forEach(function(t){ t.addEventListener('click', function(){ activateTab(t.getAttribute('data-panel')); }); });
+
+  // ---------- INIT ----------
+  setCompileStyle('bold-signal');
+  lintStyleSelect.value = 'bold-signal';
+
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<title>Design Rules, Made Observable</title>
+<style>
+  :root{
+    --ink:#14181a; --ink-soft:#4c5457; --ink-faint:#828a8d; --paper:#f7f7f5; --paper-raised:#ffffff;
+    --line:#dcdcd8; --line-soft:#e9e9e6;
+    --accent:#0e7a86; --accent-soft:#e3f1f2; --accent-ink:#053239;
+    --pass:#1a7f45; --pass-soft:#e6f4ea;
+    --fail:#b6412b; --fail-soft:#fbe9e4;
+    --mono:'IBM Plex Mono', ui-monospace, monospace;
+    --sans:'IBM Plex Sans', system-ui, sans-serif;
+    --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:24px; --sp-6:32px; --sp-7:48px; --sp-8:64px; --sp-9:96px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --ink:#eef0ef; --ink-soft:#a7aeae; --ink-faint:#767d7d; --paper:#111414; --paper-raised:#171b1b;
+      --line:#2a2f2f; --line-soft:#202424;
+      --accent:#3fc2cf; --accent-soft:#123033; --accent-ink:#c7f0f4;
+      --pass:#4ade80; --pass-soft:#13291c;
+      --fail:#f0765f; --fail-soft:#331a15;
+    }
+  }
+  :root[data-theme="dark"]{
+    --ink:#eef0ef; --ink-soft:#a7aeae; --ink-faint:#767d7d; --paper:#111414; --paper-raised:#171b1b;
+    --line:#2a2f2f; --line-soft:#202424;
+    --accent:#3fc2cf; --accent-soft:#123033; --accent-ink:#c7f0f4;
+    --pass:#4ade80; --pass-soft:#13291c;
+    --fail:#f0765f; --fail-soft:#331a15;
+  }
+
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--paper); color:var(--ink); font-family:var(--sans); line-height:1.6; -webkit-font-smoothing:antialiased;}
+  a{color:var(--accent);}
+  code{font-family:var(--mono); background:var(--accent-soft); color:var(--accent-ink); padding:1px 5px; border-radius:3px; font-size:.92em;}
+
+  .shell{max-width:680px; margin:0 auto; padding:var(--sp-8) var(--sp-5) var(--sp-9);}
+
+  .badge-row{display:flex; gap:var(--sp-2); flex-wrap:wrap; margin-bottom:var(--sp-6);}
+  .pill{font-family:var(--mono); font-size:11px; padding:4px 9px; border:1px solid var(--line); border-radius:100px; color:var(--ink-soft); white-space:nowrap;}
+  .pill.link{color:var(--accent); border-color:var(--accent-soft); text-decoration:none;}
+
+  h1.hero{font-size:clamp(32px,5vw,44px); line-height:1.08; letter-spacing:-0.015em; margin:0 0 var(--sp-4); font-weight:700; text-wrap:balance;}
+  p.subtitle{font-size:17px; color:var(--ink-soft); max-width:56ch; margin:0 0 var(--sp-6);}
+
+  .cta-row{display:flex; gap:var(--sp-3); flex-wrap:wrap; margin-bottom:var(--sp-8); padding-bottom:var(--sp-8); border-bottom:1px solid var(--line);}
+  .btn{font-family:var(--sans); font-weight:600; font-size:14px; padding:11px 20px; border-radius:4px; text-decoration:none; display:inline-flex; align-items:center; gap:6px;}
+  .btn.primary{background:var(--ink); color:var(--paper);}
+  .btn.secondary{background:none; color:var(--ink); border:1px solid var(--line);}
+
+  .beat{margin-bottom:var(--sp-7);}
+  .beat-num{font-family:var(--mono); font-size:11px; color:var(--ink-faint); letter-spacing:.06em; display:block; margin-bottom:6px;}
+  .beat h2{font-size:14px; text-transform:uppercase; letter-spacing:.06em; font-weight:600; color:var(--ink-soft); margin:0 0 var(--sp-3);}
+  .beat p{font-size:16px; max-width:60ch; margin:0 0 var(--sp-3);}
+  .beat p:last-child{margin-bottom:0;}
+
+  .evidence-list{list-style:none; margin:var(--sp-3) 0 0; padding:0; display:flex; flex-direction:column; gap:8px;}
+  .evidence-list li{font-family:var(--mono); font-size:13px; color:var(--ink-soft); padding-left:16px; position:relative;}
+  .evidence-list li::before{content:"→"; position:absolute; left:0; color:var(--accent);}
+  .evidence-list a{color:var(--ink); text-decoration:underline; text-decoration-color:var(--line);}
+  .evidence-list a:hover{text-decoration-color:var(--accent); color:var(--accent);}
+
+  .pull{border-left:3px solid var(--accent); padding:var(--sp-2) 0 var(--sp-2) var(--sp-4); margin:var(--sp-6) 0; font-size:19px; font-weight:500; line-height:1.4; max-width:52ch; color:var(--ink);}
+
+  .mini-diagram{display:flex; align-items:center; gap:var(--sp-3); flex-wrap:wrap; font-family:var(--mono); font-size:12.5px; margin:var(--sp-4) 0;}
+  .mini-node{border:1px solid var(--line); background:var(--paper-raised); border-radius:4px; padding:8px 12px; color:var(--ink-soft);}
+  .mini-node.result{border-color:var(--accent); color:var(--accent-ink); background:var(--accent-soft);}
+  .mini-arrow{color:var(--ink-faint);}
+
+  .check-demo{display:flex; align-items:center; gap:10px; border:1px solid var(--line); border-left:3px solid var(--ink); border-radius:4px; padding:10px 14px; font-family:var(--mono); font-size:12.5px; background:var(--paper-raised); margin-top:var(--sp-3);}
+  .chip{font-family:var(--mono); font-size:10px; font-weight:600; padding:2px 8px; border-radius:100px; text-transform:uppercase; letter-spacing:.04em; flex:none;}
+  .chip.fail{background:var(--fail-soft); color:var(--fail);}
+  .chip.pass{background:var(--pass-soft); color:var(--pass);}
+
+  .final-cta{margin-top:var(--sp-8); padding-top:var(--sp-7); border-top:1px solid var(--line); text-align:left;}
+  .final-cta p{font-size:16px; color:var(--ink-soft); max-width:52ch; margin:0 0 var(--sp-5);}
+
+  footer{margin-top:var(--sp-9); padding-top:var(--sp-6); border-top:1px solid var(--line); font-family:var(--mono); font-size:11.5px; color:var(--ink-faint); display:flex; justify-content:space-between; gap:var(--sp-4); flex-wrap:wrap;}
+  footer a{color:var(--ink-faint);}
+
+  @media (max-width:520px){
+    .cta-row{flex-direction:column; align-items:stretch;}
+  }
+</style>
+
+</head>
+<body>
+<div class="shell">
+
+  <div class="badge-row">
+    <span class="pill">independent project &middot; not affiliated with Gooseworks</span>
+  </div>
+
+  <h1 class="hero">Design rules, made observable.</h1>
+  <p class="subtitle">I took Gooseworks' agent-facing design specs and built a small interface for seeing, compiling, and testing them.</p>
+
+  <div class="cta-row">
+    <a class="btn primary" href="https://claude.ai/code/artifact/e0f5f869-7c0a-4c7f-b994-1ef4978fbf0a" target="_blank" rel="noopener">Open Speclint &rarr;</a>
+    <a class="btn secondary" href="https://github.com/gooseworks-ai/goose-skills" target="_blank" rel="noopener">See the source repo</a>
+  </div>
+
+  <div class="beat">
+    <span class="beat-num">01</span>
+    <h2>Observation</h2>
+    <p>Gooseworks writes its design rules as markdown, so agents can build consistent ads without a person reviewing every pull request. That's in the job posting for their Design Engineer role, almost word for word: consistency is enforced by what's written down for the agents, not by a human reviewing the work.</p>
+  </div>
+
+  <div class="beat">
+    <span class="beat-num">02</span>
+    <h2>Evidence</h2>
+    <p>They open-sourced the whole system. <code>gooseworks-ai/goose-skills</code> on GitHub has real published style specs and a real QA file for agent-generated ads, with specific, numeric rules already written down.</p>
+    <ul class="evidence-list">
+      <li><a href="https://github.com/gooseworks-ai/goose-skills/blob/main/skills/design/capabilities/create-html-carousel/STYLE_PRESETS.md" target="_blank" rel="noopener">STYLE_PRESETS.md</a> &middot; real color, type, and mood specs for named styles like Bold Signal and Dark Botanical</li>
+      <li><a href="https://github.com/gooseworks-ai/goose-skills/blob/main/skills/ads/composites/remix-graphic-ad-from-reference/tests/verifier.md" target="_blank" rel="noopener">verifier.md</a> &middot; the actual check an agent's ad output has to pass, including "legible at 256px thumbnail"</li>
+    </ul>
+  </div>
+
+  <div class="beat">
+    <span class="beat-num">03</span>
+    <h2>Hypothesis</h2>
+    <p>An agent reads those files and follows them exactly. A person can't check the same rule at all, not without asking an agent to render something first, then eyeballing it. The rule and the reader are built for each other. There's no version built for a person yet.</p>
+  </div>
+
+  <div class="beat">
+    <span class="beat-num">04</span>
+    <h2>What I built</h2>
+    <p>Speclint. Pick one of those real style specs, watch it drive a live ad component. Pick a broken version of that ad, watch the same rule that grades the agent's work catch it, with the exact number and the exact element flagged.</p>
+    <div class="mini-diagram">
+      <span class="mini-node">STYLE_PRESETS.md</span>
+      <span class="mini-arrow">&rarr;</span>
+      <span class="mini-node">live component</span>
+      <span class="mini-arrow">&rarr;</span>
+      <span class="mini-node result">pass / fail, with receipts</span>
+    </div>
+  </div>
+
+  <div class="beat">
+    <span class="beat-num">05</span>
+    <h2>How it works</h2>
+    <p>Three screens. A catalog that renders the specs as real swatches and type, not hex codes on a page. A compile step where one ad component re-skins entirely from CSS custom properties, no markup changes. A lint step where contrast, palette distance, thumbnail legibility, and safe-margin overflow are computed live against whatever's actually rendered, not scripted.</p>
+    <div class="check-demo">
+      <span>Legible at 256px thumbnail</span>
+      <span class="chip fail">Fail</span>
+      <span style="color:var(--ink-soft);">4.8px at thumbnail size, needs &ge; 6px</span>
+    </div>
+  </div>
+
+  <div class="beat">
+    <span class="beat-num">06</span>
+    <h2>What makes it real</h2>
+    <p>The 256px number isn't mine, it's theirs, pulled straight from verifier.md. Their own published presets, Bold Signal and Dark Botanical, pass every check on a clean render. Only the versions I broke on purpose fail, and only where I broke them.</p>
+  </div>
+
+  <div class="pull">You've already solved the hard half of this: teaching agents to follow design rules exactly. I got curious what the other half looks like.</div>
+
+  <div class="beat">
+    <span class="beat-num">07</span>
+    <h2>What I learned</h2>
+    <p>Their design system is already good. It's just built for one reader so far. Checking it as a human meant building the reader myself.</p>
+  </div>
+
+  <div class="beat">
+    <span class="beat-num">08</span>
+    <h2>What I'd explore next</h2>
+    <p>The verifier also does vision checks, layout match, no overlapping text, that need a model, not a formula. That's the harder layer, and the one I didn't build.</p>
+  </div>
+
+  <div class="final-cta">
+    <p>Speclint is live, functional, and built entirely from Gooseworks' own public rules. No login, nothing scripted.</p>
+    <div class="cta-row" style="border-bottom:none; padding-bottom:0; margin-bottom:0;">
+      <a class="btn primary" href="https://claude.ai/code/artifact/e0f5f869-7c0a-4c7f-b994-1ef4978fbf0a" target="_blank" rel="noopener">Open Speclint &rarr;</a>
+      <a class="btn secondary" href="https://www.workatastartup.com/jobs/109409" target="_blank" rel="noopener">Design Engineer @ Gooseworks</a>
+    </div>
+  </div>
+
+  <footer>
+    <span>Built against goose-skills, September 2026</span>
+    <span>Not a Gooseworks product</span>
+  </footer>
+
+</div>
+</body>
+</html>
